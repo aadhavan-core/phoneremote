@@ -1,0 +1,41 @@
+name: Build APK
+
+# Runs entirely on GitHub's servers — no Android SDK, Gradle cache, or
+# build output ever touches your laptop. Grab the finished .apk from the
+# "Actions" tab -> latest run -> Artifacts once it's green.
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # Installs Gradle itself in the runner, so the repo doesn't need to
+      # ship the gradle-wrapper.jar binary or gradlew scripts.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      # Debug build: auto-signed with the debug keystore, installs directly
+      # on your phone with no extra setup. Switch to "assembleRelease" once
+      # you've added a real signingConfig (see README) for a distributable
+      # release build.
+      - name: Build debug APK
+        run: gradle assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: remote-mouse-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
